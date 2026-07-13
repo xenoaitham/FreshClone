@@ -11,6 +11,8 @@
      and drop it here before launch:
      ![demo](docs/demo.gif) -->
 
+**Going Viral:** Freshclone now features a gorgeous rich terminal UI, built-in GIF recording for social sharing, and Markdown badges for your repo!
+
 ## The problem
 
 Onboarding docs rot silently. A README says "just run these 4 commands," but
@@ -56,6 +58,20 @@ freshclone owner/repo
 freshclone ./path/to/local/repo
 ```
 
+### 📸 Built-in GIF Recording
+Want to show off that your project's onboarding is flawless? Just add `--record`:
+```bash
+freshclone owner/repo --record
+```
+This automatically generates a beautiful `freshclone-demo.gif` using `vhs` that you can drop straight into your README or tweet.
+
+### 🛡️ Social Proof Badges
+Once your repo passes the freshclone test, generate a badge to prove it:
+```bash
+freshclone --badge
+```
+Outputs: `[![Freshclone: passing](https://img.shields.io/badge/Freshclone-passing-success)](https://github.com/MayonaiseLover/freshclone)`
+
 ## How it works
 
 1. **Clone** — a single, real `git clone` into a temp dir (to read the README
@@ -64,9 +80,12 @@ freshclone ./path/to/local/repo
    gitignored or untracked files on your machine can't leak in and give a
    false pass — and the repo is only ever fetched once.
 2. **Detect** — uses the repo's own `Dockerfile` if it has one; otherwise
-   picks an official slim base image from `package.json`, `requirements.txt`
-   / `pyproject.toml`, `go.mod`, `Cargo.toml`, or `Gemfile`. Falls back to
-   plain `ubuntu:24.04` (and says so) if nothing matches.
+   picks an official slim base image using intelligent detection. We natively support:
+   - Node.js (`package.json`), Python (`requirements.txt`, `pyproject.toml`)
+   - Go (`go.mod`), Rust (`Cargo.toml`), Ruby (`Gemfile`)
+   - Deno (`deno.json`), Bun (`bun.lockb`)
+   - PHP (`composer.json`), Java (`pom.xml`, `build.gradle`), Elixir (`mix.exs`)
+   Falls back to plain `ubuntu:24.04` (and says so) if nothing matches.
 3. **Extract** — pulls every ` ```bash `, ` ```sh `, ` ```shell `, ` ```console `,
    and prompt-preceded bare ` ``` ` block out of `README.md`, in order,
    stripping leading `$ ` / `> ` prompt characters.
@@ -87,6 +106,8 @@ freshclone <repo-url-or-path> [options]
   --report markdown|html  Write a shareable report
   --report-path <path>    Report output path
   -v, --verbose           Stream raw command output live
+  --badge                 Generate a Markdown badge for your README and exit
+  --record                Record the run to freshclone-demo.gif (requires vhs)
 ```
 
 ## GitHub Action

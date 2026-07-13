@@ -26,12 +26,18 @@ class Detection:
 # Node/Go/Rust/Ruby run isn't needlessly slower to pull and build than the
 # Python path for no real benefit.
 _RULES = [
+    ("deno.json", "Deno", "denoland/deno:alpine", "deno.json found"),
+    ("bun.lockb", "Bun", "oven/bun:alpine", "bun.lockb found"),
     ("package.json", "Node.js", "node:lts-slim", "package.json found"),
     ("requirements.txt", "Python", "python:3.12-slim", "requirements.txt found"),
     ("pyproject.toml", "Python", "python:3.12-slim", "pyproject.toml found"),
     ("go.mod", "Go", "golang:1-alpine", "go.mod found"),
     ("Cargo.toml", "Rust", "rust:1-slim", "Cargo.toml found"),
     ("Gemfile", "Ruby", "ruby:3-slim", "Gemfile found"),
+    ("composer.json", "PHP", "php:8-cli", "composer.json found"),
+    ("pom.xml", "Java", "maven:3-eclipse-temurin-17", "pom.xml found"),
+    ("build.gradle", "Java", "gradle:8-jdk17", "build.gradle found"),
+    ("mix.exs", "Elixir", "elixir:slim", "mix.exs found"),
 ]
 
 FALLBACK_IMAGE = "ubuntu:24.04"

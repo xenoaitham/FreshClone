@@ -8,8 +8,10 @@ import uuid
 
 import click
 from rich.console import Console
+from rich.live import Live
 
 from . import detect, parser, report
+from .tui import FreshcloneTUI
 from .runner import (
     FreshcloneError,
     RunResult,
@@ -43,13 +45,54 @@ _ICON = {"passed": "✅", "failed": "❌", "skipped": "⏭️"}
                    "(CI, or no TTY attached), since nobody is there to react to "
                    "the warning before it runs. Has no effect in an interactive "
                    "terminal, where the step still runs after a printed warning.")
+@click.option("--badge", is_flag=True, help="Generate a Markdown badge for your README and exit.")
+@click.option("--record", is_flag=True, help="Record the run to freshclone-demo.gif (requires vhs).")
 def main(repo_ref, skip, continue_on_error, timeout, report_format, report_path, verbose,
-         force_flagged_output):
+         force_flagged_output, badge, record):
     """Clone REPO_REF into a disposable container and run every shell
     command in its README, in order, as a brand-new contributor would.
 
     REPO_REF can be a GitHub URL, an `owner/repo` shorthand, or a local path.
     """
+    if badge:
+        console.print("[![Freshclone: passing](https://img.shields.io/badge/Freshclone-passing-success)](https://github.com/MayonaiseLover/freshclone)")
+        sys.exit(0)
+
+    if record:
+        import shutil
+        if not shutil.which("vhs"):
+            console.print("[red]Error: vhs is required for recording (https://github.com/charmbracelet/vhs).[/red]")
+            sys.exit(1)
+        
+        args = [arg for arg in sys.argv[1:] if arg != "--record"]
+        cmd = "freshclone " + " ".join(args)
+        
+        tape = f"""
+Output freshclone-demo.gif
+Require freshclone
+Set Margin 20
+Set MarginFill "#674EFF"
+Set BorderRadius 10
+Set WindowBar Rings
+Set Theme "Catppuccin Mocha"
+Set FontSize 14
+Set Width 1400
+Set Height 900
+Type "{cmd}"
+Enter
+Sleep 20s
+"""
+        with tempfile.NamedTemporaryFile("w", suffix=".tape", delete=False) as f:
+            f.write(tape)
+            tape_path = f.name
+        
+        console.print("[yellow]Starting VHS recording...[/yellow]")
+        import subprocess
+        subprocess.run(["vhs", "<", tape_path], shell=True)
+        os.remove(tape_path)
+        console.print("[green]Saved to freshclone-demo.gif![/green]")
+        sys.exit(0)
+
     console.print(f"\n[bold]Freshclone[/bold] → {repo_ref}\n")
 
     try:
@@ -144,22 +187,26 @@ def main(repo_ref, skip, continue_on_error, timeout, report_format, report_path,
 
             console.print("[bold]README steps:[/bold]")
 
-            def on_line(line: str) -> None:
-                if verbose:
-                    console.print(f"     {line}", style="dim")
+            runnable_steps = [s for s in steps if s.likely_output and s.index not in skip_set]
+            tui = FreshcloneTUI(runnable_steps)
 
             results = []
-            for r in run_steps(client, tag, steps, skip_set, timeout, continue_on_error,
-                                on_line, workdir=workdir):
-                results.append(r)
-                label = f"{r.line}"
-                if len(label) > 60:
-                    label = label[:57] + "..."
-                console.print(f"  {_ICON[r.status]} {label:<60} ({r.duration:.1f}s)")
-                if r.status == "failed":
-                    console.print(f"     exit code {r.exit_code}")
-                    for out_line in (r.output_tail or "").splitlines()[-15:]:
-                        console.print(f"     {out_line}", style="dim red")
+            with Live(tui.generate(), refresh_per_second=10) as live:
+                def on_line(line: str) -> None:
+                    tui.add_log(line)
+                    live.update(tui.generate())
+
+                for r in run_steps(client, tag, steps, skip_set, timeout, continue_on_error,
+                                    on_line, workdir=workdir):
+                    results.append(r)
+                    if r.status == "passed":
+                        tui.update_step(r.step.index, "passed")
+                    elif r.status == "failed":
+                        tui.update_step(r.step.index, "failed")
+                        if r.output_tail:
+                            for out_line in r.output_tail.splitlines():
+                                tui.add_log(f"[red]{out_line}[/red]")
+                    live.update(tui.generate())
 
             total = len(results)
             failed = [r for r in results if r.status == "failed"]

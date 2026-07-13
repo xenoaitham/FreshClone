@@ -7,6 +7,7 @@ freshclone/detect.py
 freshclone/parser.py
 freshclone/report.py
 freshclone/runner.py
+freshclone/tui.py
 freshclone.egg-info/PKG-INFO
 freshclone.egg-info/SOURCES.txt
 freshclone.egg-info/dependency_links.txt
