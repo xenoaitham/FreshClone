@@ -1,103 +1,92 @@
 # freshclone
 
-**Run your README so a new contributor doesn't have to.**
+**Your onboarding documentation is lying to you. Freshclone proves it.**
 
 [![build](https://img.shields.io/github/actions/workflow/status/MayonaiseLover/freshclone/ci.yml?branch=main)](https://github.com/MayonaiseLover/freshclone/actions)
 [![PyPI](https://img.shields.io/pypi/v/freshclone.svg)](https://pypi.org/project/freshclone/)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-<!-- Demo GIF: point freshclone at a real repo, show a step fail live.
-     Record with VHS (https://github.com/charmbracelet/vhs) or asciinema
-     and drop it here before launch:
-     ![demo](docs/demo.gif) -->
+<!-- Replace this comment with the actual freshclone-demo.gif once generated using `--record` -->
+> *Run your README in a pristine container and watch it execute live in a gorgeous TUI dashboard.*
 
-**Going Viral:** Freshclone now features a gorgeous rich terminal UI, built-in GIF recording for social sharing, and Markdown badges for your repo!
+---
 
-## The problem
+## 🛑 The Problem
 
-Onboarding docs rot silently. A README says "just run these 4 commands," but
-step 3 quietly assumes an env var, a global install, or a Node version nobody
-wrote down. Nobody finds out until a new hire or contributor gets stuck.
-Today the only fix is manual: ask a friend to try it fresh, or re-trace it
-yourself in a clean VM.
+Onboarding docs rot silently. 
 
-`freshclone` automates that fresh-eyes trace. It clones your repo into a
-disposable Docker container, extracts every `bash`/`sh` code block from your
-README in order, runs them exactly as written, and tells you precisely which
-step breaks and why.
+A README says "just run these 4 commands," but step 3 quietly assumes an env var, a global install, or a Node version nobody wrote down. Nobody finds out until a new contributor gets stuck and wastes 4 hours.
 
-## Quickstart
+Today, the only fix is manual: ask a friend to try it fresh, or re-trace it yourself in a clean VM.
 
+## 🚀 The Solution
+
+`freshclone` automates that fresh-eyes trace. 
+
+It clones your repo into a disposable Docker container, extracts every `bash`/`sh` code block from your README in order, runs them exactly as written, and tells you precisely which step breaks and why.
+
+If it passes, you get a badge. If it fails, you get the exact logs.
+
+## ✨ Features
+
+- 🧠 **Zero-Config Detection:** Natively detects and builds slim environments for Node.js, Python, Go, Rust, Ruby, Deno, Bun, PHP, Java, and Elixir. No `Dockerfile` required.
+- 📺 **Gorgeous TUI Dashboard:** Watch your container logs stream live while your steps tick off on a split-screen dashboard.
+- 🎬 **Built-in GIF Recording:** Run `freshclone --record` to automatically generate a high-quality demo `.gif` of your flawless onboarding to share on social media.
+- 🛡️ **Proof of Life Badges:** Generate a Markdown badge (`freshclone --badge`) to proudly display on your repo that your onboarding actually works.
+- 🔄 **CI/CD Ready:** Drop it into GitHub Actions to block PRs that break your README instructions.
+
+---
+
+## ⚡ Quickstart
+
+Install it globally via pip:
 ```bash
 pip install freshclone
+```
 
+Run it against any public repository:
+```bash
 freshclone facebook/react
 ```
 
-```
-Freshclone → facebook/react
-Detected: Node.js (package.json found, no Dockerfile)
-Building container... done (12s)
-
-README steps:
-  ✅ npm install                          (18.2s)
-  ✅ npm run build                        (34.1s)
-  ❌ npm test -- --ci                     (2.1s)
-     exit code 1
-     Error: Cannot find module 'react-test-env'
-     ...last 12 lines of output...
-
-1/3 steps failed. Report written to freshclone-report.md
-```
-
 Works on a GitHub URL, an `owner/repo` shorthand, or a local path:
-
 ```bash
 freshclone https://github.com/owner/repo
 freshclone owner/repo
 freshclone ./path/to/local/repo
 ```
 
-### 📸 Built-in GIF Recording
+---
+
+## 📸 Show off with `--record` and `--badge`
+
 Want to show off that your project's onboarding is flawless? Just add `--record`:
 ```bash
 freshclone owner/repo --record
 ```
-This automatically generates a beautiful `freshclone-demo.gif` using `vhs` that you can drop straight into your README or tweet.
+This automatically generates a beautiful `freshclone-demo.gif` using Charm's `vhs` that you can drop straight into your README or tweet.
 
-### 🛡️ Social Proof Badges
-Once your repo passes the freshclone test, generate a badge to prove it:
+Once your repo passes the test, generate a badge to prove it to your contributors:
 ```bash
 freshclone --badge
 ```
 Outputs: `[![Freshclone: passing](https://img.shields.io/badge/Freshclone-passing-success)](https://github.com/MayonaiseLover/freshclone)`
 
-## How it works
+---
 
-1. **Clone** — a single, real `git clone` into a temp dir (to read the README
-   and detect the stack), then copied into the container as-is. Because it's
-   an actual clone rather than a bind-mount of your working directory,
-   gitignored or untracked files on your machine can't leak in and give a
-   false pass — and the repo is only ever fetched once.
-2. **Detect** — uses the repo's own `Dockerfile` if it has one; otherwise
-   picks an official slim base image using intelligent detection. We natively support:
-   - Node.js (`package.json`), Python (`requirements.txt`, `pyproject.toml`)
-   - Go (`go.mod`), Rust (`Cargo.toml`), Ruby (`Gemfile`)
-   - Deno (`deno.json`), Bun (`bun.lockb`)
-   - PHP (`composer.json`), Java (`pom.xml`, `build.gradle`), Elixir (`mix.exs`)
-   Falls back to plain `ubuntu:24.04` (and says so) if nothing matches.
-3. **Extract** — pulls every ` ```bash `, ` ```sh `, ` ```shell `, ` ```console `,
-   and prompt-preceded bare ` ``` ` block out of `README.md`, in order,
-   stripping leading `$ ` / `> ` prompt characters.
-4. **Run** — executes each step inside the container, streaming output live,
-   with a per-step timeout so a hanging install can't stall things forever.
-5. **Report** — a colored pass/fail summary in your terminal, plus optional
-   `--report markdown` / `--report html` output you can paste straight into
-   a GitHub issue.
+## ⚙️ How it works
 
-## CLI reference
+1. **Clone** — A single, real `git clone` into a temp dir. Because it's an actual clone rather than a bind-mount of your working directory, gitignored or untracked files on your machine can't leak in and give a false pass.
+2. **Detect** — Uses the repo's own `Dockerfile` if it has one; otherwise, intelligently picks an official slim base image based on your manifest files (`package.json`, `Cargo.toml`, `bun.lockb`, etc.). Falls back to `ubuntu:24.04` if nothing matches.
+3. **Extract** — Pulls every ` ```bash `, ` ```sh `, ` ```shell `, and ` ```console ` block out of `README.md`, in order, stripping leading `$ ` / `> ` prompt characters.
+4. **Run** — Executes each step inside the pristine container, streaming the output live to the TUI dashboard with a per-step timeout.
+5. **Report** — A colored pass/fail summary, plus optional `--report markdown` / `--report html` output you can paste straight into a GitHub issue.
 
-```
+---
+
+## 🛠️ CLI Reference
+
+```text
 freshclone <repo-url-or-path> [options]
 
   --skip <n>              Skip step n (repeatable: --skip 2 --skip 5)
@@ -110,56 +99,57 @@ freshclone <repo-url-or-path> [options]
   --record                Record the run to freshclone-demo.gif (requires vhs)
 ```
 
-## GitHub Action
+---
 
-Catch broken onboarding steps before they land, on every PR that touches
-`README.md`:
+## 🤖 GitHub Action Integration
+
+Catch broken onboarding steps before they land, on every PR that touches your `README.md`:
 
 ```yaml
 # .github/workflows/freshclone.yml
 name: README onboarding check
 on:
   pull_request:
-    paths: ["README.md"]
-permissions:
-  contents: read
-  pull-requests: write
+    paths:
+      - 'README.md'
+
 jobs:
-  freshclone:
+  test-readme:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: freshclone/freshclone@v1
+      - uses: actions/setup-python@v5
         with:
-          comment-on-success: "false"
+          python-version: '3.12'
+      
+      - run: pip install freshclone
+      
+      - name: Run freshclone against the PR
+        run: |
+          # Fetch the exact PR branch
+          freshclone https://github.com/${{ github.repository }}.git \
+            --report markdown --report-path report.md
+            
+      - name: Comment on PR if it fails
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('report.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "🚨 **Heads up! Your changes broke the README onboarding instructions.**\n\n" + report
+            })
 ```
 
-On failure, it posts the markdown report as a PR comment using the built-in
-`GITHUB_TOKEN` — no separate API key needed. See
-[`examples/github-workflow.yml`](examples/github-workflow.yml) for the full
-example.
+---
 
-## vs. the alternatives
+## 🤝 Contributing
 
-| | freshclone | Manually testing in a VM | Sentry Suspect Commits-style tools |
-|---|---|---|---|
-| Catches broken README steps | ✅ | ✅ (if you remember to) | ❌ (catches runtime errors, not docs drift) |
-| Runs on every PR | ✅ (GitHub Action) | ❌ | ✅ |
-| Zero manual re-tracing | ✅ | ❌ | N/A |
-| Shareable pass/fail report | ✅ (md/html) | ❌ | Varies |
-| Setup cost | `pip install` | Recurring manual effort | Instrumentation in your app |
+We welcome contributions! Please open an issue or submit a pull request if you have ideas for new ecosystems to support or TUI enhancements.
 
-## Non-goals (v1)
+## 📄 License
 
-- Non-bash README languages (PowerShell, etc.)
-- Auto-fixing or auto-PRing broken docs — detection and reporting only
-- A hosted dashboard — this is CLI + GitHub Action only
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md). Good first issues are labeled
-[`good first issue`](https://github.com/freshclone/freshclone/labels/good%20first%20issue).
-
-## License
-
-MIT — see [LICENSE](LICENSE).
+MIT License. See [LICENSE](LICENSE) for details.
