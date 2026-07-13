@@ -1,0 +1,24 @@
+# Copy this to .github/workflows/freshclone.yml in a repo that uses the
+# freshclone action. It runs whenever a PR touches README.md and comments
+# on the PR if any onboarding step is broken.
+name: README onboarding check
+
+on:
+  pull_request:
+    paths:
+      - "README.md"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  freshclone:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: freshclone/freshclone@v1
+        with:
+          comment-on-success: "false"
+          timeout: "180"

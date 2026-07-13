@@ -1,0 +1,135 @@
+name: "Freshclone README Check"
+description: "Runs every shell command in your README inside a clean container and reports exactly which step breaks."
+author: "Freshclone"
+branding:
+  icon: "check-circle"
+  color: "green"
+
+inputs:
+  comment-on-success:
+    description: "Post a PR comment even when every step passes."
+    required: false
+    default: "false"
+  timeout:
+    description: "Per-step timeout in seconds."
+    required: false
+    default: "120"
+  continue-on-error:
+    description: "Run every README step even after one fails, instead of stopping at the first failure."
+    required: false
+    default: "false"
+  skip:
+    description: "Space-separated step indices to skip, e.g. '3 5'."
+    required: false
+    default: ""
+  force-flagged-output:
+    description: >-
+      Run README steps that look like example output rather than a real
+      command, instead of auto-skipping them (the default for unattended
+      runs like this action). Only set this if you've confirmed those
+      blocks are genuinely runnable.
+    required: false
+    default: "false"
+  github-token:
+    description: "Token used to post the PR comment. Defaults to the workflow's GITHUB_TOKEN."
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  passed:
+    description: "'true' if every README step passed."
+    value: ${{ steps.freshclone.outputs.passed }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install freshclone
+      shell: bash
+      # Pin to the same ref this action was invoked with (e.g. `uses:
+      # freshclone/freshclone@v1` pins to freshclone==1.*, `@v1.2.3` pins
+      # exactly) so a new release of the action can't silently change
+      # behavior for anyone who hasn't bumped their `uses:` line. Falls
+      # back to the latest release (with a warning) only when the ref
+      # isn't a pinnable version, e.g. someone referencing `@main`.
+      #
+      # github.action_ref cannot be interpolated directly into `run:` for a
+      # composite action — it has to come in through `env:` instead, or it
+      # resolves empty and this would silently fall back (with a spurious
+      # warning) on every run, even when the caller pinned correctly.
+      env:
+        ACTION_REF: ${{ github.action_ref }}
+      run: |
+        ref="$ACTION_REF"
+        version="${ref#v}"
+        if [ -n "$version" ] && pip install "freshclone==$version" 2>/tmp/freshclone-pip.log; then
+          echo "Installed freshclone==$version (pinned to action ref '$ref')"
+        else
+          echo "::warning::Could not install freshclone pinned to action ref '$ref' — falling back to the latest release. Reference a release tag (e.g. '@v1') to pin behavior."
+          pip install freshclone
+        fi
+
+    - name: Run freshclone against this repo
+      id: freshclone
+      shell: bash
+      run: |
+        set +e
+        SKIP_ARGS=""
+        for n in ${{ inputs.skip }}; do
+          SKIP_ARGS="$SKIP_ARGS --skip $n"
+        done
+        CONTINUE_FLAG=""
+        if [ "${{ inputs.continue-on-error }}" = "true" ]; then
+          CONTINUE_FLAG="--continue-on-error"
+        fi
+        FORCE_FLAGGED_FLAG=""
+        if [ "${{ inputs.force-flagged-output }}" = "true" ]; then
+          FORCE_FLAGGED_FLAG="--force-flagged-output"
+        fi
+
+        freshclone "${{ github.workspace }}" \
+          --report markdown \
+          --report-path freshclone-report.md \
+          --timeout "${{ inputs.timeout }}" \
+          $CONTINUE_FLAG $FORCE_FLAGGED_FLAG $SKIP_ARGS
+        code=$?
+        echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+        if [ "$code" = "0" ]; then
+          echo "passed=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "passed=false" >> "$GITHUB_OUTPUT"
+        fi
+        exit 0
+
+    - name: Comment on PR
+      if: >-
+        github.event_name == 'pull_request' &&
+        (steps.freshclone.outputs.passed != 'true' || inputs.comment-on-success == 'true')
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const fs = require('fs');
+          let body;
+          try {
+            body = fs.readFileSync('freshclone-report.md', 'utf8');
+          } catch (e) {
+            body = "${{ steps.freshclone.outputs.passed }}" === "true"
+              ? "✅ Freshclone: all README steps passed."
+              : "❌ Freshclone: the run failed before a report could be generated.";
+          }
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            body,
+          });
+
+    - name: Fail the check if any step failed
+      if: steps.freshclone.outputs.passed != 'true'
+      shell: bash
+      run: exit 1

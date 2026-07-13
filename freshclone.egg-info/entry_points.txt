@@ -1,0 +1,2 @@
+[console_scripts]
+freshclone = freshclone.cli:main
