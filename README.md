@@ -3,6 +3,7 @@
 **Run your README so a new contributor doesn't have to.**
 
 [![build](https://img.shields.io/github/actions/workflow/status/MayonaiseLover/freshclone/ci.yml?branch=main)](https://github.com/MayonaiseLover/freshclone/actions)
+[![PyPI](https://img.shields.io/pypi/v/freshclone.svg)](https://pypi.org/project/freshclone/)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 <!-- Demo GIF: point freshclone at a real repo, show a step fail live.
