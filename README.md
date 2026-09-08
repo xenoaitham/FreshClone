@@ -2,7 +2,7 @@
 
 **Your onboarding documentation is lying to you. Freshclone proves it.**
 
-[![build](https://img.shields.io/github/actions/workflow/status/MayonaiseLover/freshclone/ci.yml?branch=main)](https://github.com/MayonaiseLover/freshclone/actions)
+[![build](https://img.shields.io/github/actions/workflow/status/xenoaitham/freshclone/ci.yml?branch=main)](https://github.com/xenoaitham/freshclone/actions)
 [![PyPI](https://img.shields.io/pypi/v/freshclone.svg)](https://pypi.org/project/freshclone/)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -70,7 +70,7 @@ Once your repo passes the test, generate a badge to prove it to your contributor
 ```bash
 freshclone --badge
 ```
-Outputs: `[![Freshclone: passing](https://img.shields.io/badge/Freshclone-passing-success)](https://github.com/MayonaiseLover/freshclone)`
+Outputs: `[![Freshclone: passing](https://img.shields.io/badge/Freshclone-passing-success)](https://github.com/xenoaitham/freshclone)`
 
 ---
 
